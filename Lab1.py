@@ -39,8 +39,8 @@ def task_characteristics(_data: list, sizes: list):
         variance_value = variance(data, mean_value)
         std_dev = std_deviation(variance_value)
         cv = coefficient_of_variation(std_dev, mean_value)
-        confidence_intervals = {alpha: confidence_interval(mean_value, std_dev, n, alpha) for alpha in
-                                [0.9, 0.95, 0.99]}
+        confidence_intervals = {alpha: confidence_interval(mean_value, std_dev, n, alpha)
+                                for alpha in [0.9, 0.95, 0.99]}
 
         results.append({'n': n,
                         'mean': mean_value,
@@ -80,7 +80,7 @@ def main():
     # task_distribution_law_approximation(data)
     #
     # data1 = task_law_generate_random(300)
-    # task_characteristics(data1, [300])
+    # task_characteristics(data1, [10, 20, 50, 100, 200, 300])
     # task_autocorrelation_analysis(data1)
     #
     # task_comparative_analysis(data, data1)
