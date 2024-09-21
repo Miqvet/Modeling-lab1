@@ -26,11 +26,11 @@ def relative_deviation(value, reference_value):
     """Относительное отклонение"""
     return abs((value - reference_value) / reference_value) * 100
 
-# Основные параметры
+# Коэфициенты Стьюдента для 10 20 50 100 200 300
 z_values = {
-    0.9: 1.645,
-    0.95: 1.96,
-    0.99: 2.576
+    0.9: [1.833, 1.729, 1.6766, 1.6604, 1.6525, 1.65],
+    0.95: [2.262, 2.093, 2.0096, 1.984, 1.972, 1.968],
+    0.99: [3.25, 2.861, 2.68, 2.626, 2.601, 2,592]
 }
 
 # Чтение данных из файла
@@ -39,28 +39,17 @@ def read_data_from_file(file_path):
     with open(file_path, 'r') as f:
         return list(map(float, f.read().replace(',', '.').split()))
 
-# Основная программа
+
 def analyze_data(data):
     """Основной анализ данных"""
     n = len(data)
-    
-    # 1. Математическое ожидание
     mean_value = mean(data)
-    
-    # 2. Дисперсия
     variance_value = variance(data, mean_value)
-    
-    # 3. Среднеквадратическое отклонение
     std_dev = std_deviation(variance_value)
-    
-    # 4. Коэффициент вариации
     cv = coefficient_of_variation(std_dev, mean_value)
-    
-    # 5. Доверительные интервалы
-    confidence_intervals = {alpha: confidence_interval(mean_value, std_dev, n, z)
+    confidence_intervals = {alpha: confidence_interval(mean_value, std_dev, n, z[[10, 20, 50, 100, 200, 300].index(n)])
                             for alpha, z in z_values.items()}
-    
-    # Результаты для всей выборки
+
     return {
         'mean': mean_value,
         'variance': variance_value,
@@ -79,7 +68,7 @@ def analyze_partial_data(data, sizes):
     return results
 
 # Чтение основного файла и анализ
-data = read_data_from_file('O:\\Itmo\\5_SEM\\Modeling\\Modeling-lab1\\data.txt')
+data = read_data_from_file('data.txt')
 
 # Анализ данных для выборок из 10, 100 и всей выборки
 results = analyze_partial_data(data, [10, 20, 50, 100, 200, 300])
