@@ -79,7 +79,7 @@ def analyze_partial_data(data, sizes):
     return results
 
 # Чтение основного файла и анализ
-data = read_data_from_file('O:\\Itmo\\5_SEM\\Modeling\\Lab1\\data.txt')
+data = read_data_from_file('O:\\Itmo\\5_SEM\\Modeling\\Modeling-lab1\\data.txt')
 
 # Анализ данных для выборок из 10, 100 и всей выборки
 results = analyze_partial_data(data, [10, 20, 50, 100, 200, 300])
