@@ -1,98 +1,96 @@
 import math
 import matplotlib.pyplot as plt
 
+
 def mean(data):
-    """Математическое ожидание"""
     return sum(data) / len(data)
 
+
 def variance(data, mean_value):
-    """Дисперсия"""
     return sum((x - mean_value) ** 2 for x in data) / len(data)
 
+
 def std_deviation(variance_value):
-    """Среднеквадратическое отклонение"""
     return math.sqrt(variance_value)
 
+
 def coefficient_of_variation(std_dev, mean_value):
-    """Коэффициент вариации"""
     return std_dev / mean_value
 
-def confidence_interval(mean_value, std_dev, n, z_value):
-    """Доверительный интервал"""
-    margin_of_error = z_value * (std_dev / math.sqrt(n))
-    return mean_value - margin_of_error, mean_value + margin_of_error
 
-def relative_deviation(value, reference_value):
-    """Относительное отклонение"""
-    return abs((value - reference_value) / reference_value) * 100
+def confidence_interval(mean_value, std_dev, n, alpha):
+    student_value = {
+        0.9: [1.833, 1.729, 1.6766, 1.6604, 1.6525, 1.65],
+        0.95: [2.262, 2.093, 2.0096, 1.984, 1.972, 1.968],
+        0.99: [3.25, 2.861, 2.68, 2.626, 2.601, 2.592]
+    }[alpha][[10, 20, 50, 100, 200, 300].index(n)]
 
-# Коэфициенты Стьюдента для 10 20 50 100 200 300
-z_values = {
-    0.9: [1.833, 1.729, 1.6766, 1.6604, 1.6525, 1.65],
-    0.95: [2.262, 2.093, 2.0096, 1.984, 1.972, 1.968],
-    0.99: [3.25, 2.861, 2.68, 2.626, 2.601, 2,592]
-}
-
-# Чтение данных из файла
-def read_data_from_file(file_path):
-    """Чтение данных из файла, предположим, что данные разделены пробелами"""
-    with open(file_path, 'r') as f:
-        return list(map(float, f.read().replace(',', '.').split()))
+    margin_of_error = student_value * (std_dev / math.sqrt(n))
+    return mean_value - margin_of_error, mean_value + margin_of_error, margin_of_error
 
 
-def analyze_data(data):
-    """Основной анализ данных"""
-    n = len(data)
-    mean_value = mean(data)
-    variance_value = variance(data, mean_value)
-    std_dev = std_deviation(variance_value)
-    cv = coefficient_of_variation(std_dev, mean_value)
-    confidence_intervals = {alpha: confidence_interval(mean_value, std_dev, n, z[[10, 20, 50, 100, 200, 300].index(n)])
-                            for alpha, z in z_values.items()}
+def task_characteristics(_data: list, sizes: list):
+    results = []
 
-    return {
-        'mean': mean_value,
-        'variance': variance_value,
-        'std_dev': std_dev,
-        'cv': cv,
-        'confidence_intervals': confidence_intervals
-    }
+    for n in sizes:
+        data = _data[:n]
 
-# Функция для анализа частичных выборок
-def analyze_partial_data(data, sizes):
-    """Анализ данных для подвыборок размера sizes"""
-    results = {}
-    for size in sizes:
-        subset = data[:size]
-        results[size] = analyze_data(subset)
-    return results
+        mean_value = mean(data)
+        variance_value = variance(data, mean_value)
+        std_dev = std_deviation(variance_value)
+        cv = coefficient_of_variation(std_dev, mean_value)
+        confidence_intervals = {alpha: confidence_interval(mean_value, std_dev, n, alpha) for alpha in
+                                [0.9, 0.95, 0.99]}
 
-# Чтение основного файла и анализ
-data = read_data_from_file('data.txt')
+        results.append({'n': n,
+                        'mean': mean_value,
+                        'variance': variance_value,
+                        'std_dev': std_dev,
+                        'cv': cv})
 
-# Анализ данных для выборок из 10, 100 и всей выборки
-results = analyze_partial_data(data, [10, 20, 50, 100, 200, 300])
+        print(f"Выборка размера {n}:")
+        print(f"  Математическое ожидание: {mean_value:.4f}")
+        print(f"  Дисперсия: {variance_value:.4f}")
+        print(f"  Среднеквадратическое отклонение: {std_dev:.4f}")
+        print(f"  Коэффициент вариации: {cv:.4f}")
+        for alpha, interval in confidence_intervals.items():
+            print(f"  Доверительный интервал для ɑ={alpha}: ({interval[0]:.4f}, {interval[1]:.4f}) (±{interval[2]:.4f} от мат. ожидания)")
+            results[-1][f'confidence_interval_{alpha}_margin'] = interval[2]
+        print()
 
-# Вывод результатов
-for size, res in results.items():
-    print(f"Выборка размера {size}:")
-    print(f"  Математическое ожидание: {res['mean']}")
-    print(f"  Дисперсия: {res['variance']}")
-    print(f"  Среднеквадратическое отклонение: {res['std_dev']}")
-    print(f"  Коэффициент вариации: {res['cv']}")
-    for alpha, interval in res['confidence_intervals'].items():
-        print(f"  Доверительный интервал для {alpha*100}%: {interval}")
-    print()
-
-# Относительные отклонения по сравнению с полной выборкой
-reference = results[300]
-for size in [10, 20, 50, 100, 200]:
-    print(f"Относительные отклонения для выборки из {size} элементов:")
-    for key in ['mean', 'variance', 'std_dev', 'cv']:
-        deviation = relative_deviation(results[size][key], reference[key])
-        print(f"  {key}: {deviation:.2f}%")
+    reference_result = results[-1]
+    for result in results[:-1]:
+        print(f"Относительные отклонения характеристик выборки из {result['n']} элементов от выборки в {reference_result['n']} элементов:")
+        del result['n']
+        for key in result.keys():
+            reference_value, value = reference_result[key], result[key]
+            deviation = abs((value - reference_value) / reference_value) * 100
+            print(f"  {key}: {deviation:.4f}%")
+        print()
 
 
+def main():
+    with open('data.txt', 'r') as f:
+        data = list(map(float, f.read().replace(',', '.').split()))
+
+    task_characteristics(data, [10, 20, 50, 100, 200, 300])
+    # task_values_plot(data)
+    # task_autocorrelation_analysis(data)
+    # task_frequency_distribution_histogram(data)
+    # task_distribution_law_approximation(data)
+    #
+    # data1 = task_law_generate_random(300)
+    # task_characteristics(data1, [300])
+    # task_autocorrelation_analysis(data1)
+    #
+    # task_comparative_analysis(data, data1)
+    # task_correlation_dependence(data, data1)
+
+
+if __name__ == '__main__':
+    main()
+
+'''
 def plot_sequence(data):
     """
     Построение графика для числовой последовательности.
@@ -110,4 +108,6 @@ def plot_sequence(data):
     # Отображение графика
     plt.show()
 
+
 plot_sequence(data)
+'''
