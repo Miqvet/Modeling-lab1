@@ -1,7 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 import random
-
+import numpy as np
 
 def mean(data):
     return sum(data) / len(data)
@@ -114,7 +114,7 @@ def task_frequency_distribution_histogram(data):
     n = len(data)
     bins = 1 + int(math.log2(n))
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 5))
     plt.hist(data, bins=bins, density=True, color='blue', alpha=0.7)
     plt.title("Гистограмма распределения вероятностей")
     plt.xlabel("Значения")
@@ -123,92 +123,74 @@ def task_frequency_distribution_histogram(data):
     plt.show()
 
 
-# Функции распределений
+# Функции для вычисления статистических показателей
+def uniform_pdf(x, min_value, max_value):
+    if min_value <= x <= max_value:
+        return 1 / (max_value - min_value)
+    else:
+        return 0
 
-def uniform_distribution(min_value, max_value, size):
-    """Генерация равномерного распределения"""
-    return [random.uniform(min_value, max_value) for _ in range(size)]
+def exponential_pdf(x, lambda_value):
+    if x >= 0:
+        return lambda_value * math.exp(-lambda_value * x)
+    else:
+        return 0
+
+def erlang_pdf(x, k, lambda_value):
+    if x >= 0:
+        return (lambda_value ** k * x ** (k - 1) * math.exp(-lambda_value * x)) / math.factorial(k - 1)
+    else:
+        return 0
+
+def hyperexponential_pdf(x, p, lambda_1, lambda_2):
+    if x >= 0:
+        return p * lambda_1 * math.exp(-lambda_1 * x) + (1 - p) * lambda_2 * math.exp(-lambda_2 * x)
+    else:
+        return 0
 
 
-def exponential_distribution(lambda_value, size):
-    """Генерация экспоненциального распределения"""
-    return [-math.log(1 - random.random()) / lambda_value for _ in range(size)]
+# Построение гистограммы и аппроксимирующей кривой
+def plot_histogram_and_approximation(data):
+    N = len(data)
+    bins = 1 + int(math.log2(N))
 
-
-def erlang_distribution(k, lambda_value, size):
-    """Генерация распределения Эрланга k-го порядка"""
-    return [sum([-math.log(1 - random.random()) / lambda_value for _ in range(k)]) for _ in range(size)]
-
-
-def hyperexponential_distribution(p, lambda_1, lambda_2, size):
-    """Генерация гиперэкспоненциального распределения"""
-    return [(random.choice([lambda_1, lambda_2]) * -math.log(1 - random.random())) for _ in range(size)]
-
-
-# Аппроксимация распределения по коэффициенту вариации
-def approximate_distribution(data):
-    """Выбор и генерация аппроксимации распределения в зависимости от коэффициента вариации"""
     mean_value = mean(data)
     variance_value = variance(data, mean_value)
     std_dev = std_deviation(variance_value)
     cv = coefficient_of_variation(std_dev, mean_value)
 
-    size = len(data)
-
-    # 1. CV ≈ 0
+    plt.figure(figsize=(10, 5))
+    plt.hist(data, bins=bins, density=True, color='blue', alpha=0.7, label="Исходные данные")
+    
+    x_values = np.linspace(min(data), max(data), 1000)
+    y_values = []
+    
     if cv < 0.1:
-        min_value = min(data)
-        max_value = max(data)
-        approx_data = uniform_distribution(min_value, max_value, size)
         title = "Равномерное распределение"
-
-    # 2. CV ≈ 1
+        min_value, max_value = min(data), max(data)
+        y_values = [uniform_pdf(x, min_value, max_value) for x in x_values]
+    
     elif abs(cv - 1) < 0.1:
-        lambda_value = 1 / mean_value
-        approx_data = exponential_distribution(lambda_value, size)
         title = "Экспоненциальное распределение"
-
-    # 3. CV < 1
+        lambda_value = 1 / mean(data)
+        y_values = [exponential_pdf(x, lambda_value) for x in x_values]
+    
     elif cv < 1:
-        k = round(1 / cv ** 2)
-        lambda_value = k / mean_value
-        approx_data = erlang_distribution(k, lambda_value, size)
-        title = f"Эрланговское распределение k={k}"
-
-    # 4. CV > 1
+        title = f"Эрланговское распределение k={round(1 / cv ** 2)}"
+        k = round(1 / coefficient_of_variation(std_deviation(variance(data, mean(data))), mean(data)) ** 2)
+        lambda_value = k / mean(data)
+        y_values = [erlang_pdf(x, k, lambda_value) for x in x_values]
+    
     else:
-        lambda_1 = 2 / mean_value
-        lambda_2 = lambda_1 / (cv ** 2 - 1)
-        p = 0.5  # Вероятность выбора одного из параметров
-        approx_data = hyperexponential_distribution(p, lambda_1, lambda_2, size)
         title = "Гиперэкспоненциальное распределение"
-
-    return approx_data, title
-
-
-# Построение гистограммы и аппроксимации
-def task_distribution_law_approximation(data):
-    """
-    Построение гистограммы исходных данных и гистограммы аппроксимированного распределения.
-    """
-    # Количество элементов
-    N = len(data)
-
-    # Количество бинов по правилу Стёрджеса
-    bins = 1 + int(math.log2(N))
-
-    # Аппроксимация данных
-    approx_data, title = approximate_distribution(data)
-
-    # Построение гистограммы исходных данных
-    plt.figure(figsize=(10, 6))
-    plt.hist(data, bins=bins, density=True, color='blue', alpha=0.6, label="Исходные данные")
-
-    # Построение гистограммы аппроксимации
-    plt.hist(approx_data, bins=bins, density=True, color='red', alpha=0.4, label=f"Аппроксимировано: {title}")
-
-    # Оформление графика
-    plt.title("Гистограмма распределения и его аппроксимация")
+        lambda_1 = 2 / mean(data)
+        lambda_2 = lambda_1 / (coefficient_of_variation(std_deviation(variance(data, mean(data))), mean(data)) ** 2 - 1)
+        p = 0.5  # Вероятность выбора одного из параметров
+        y_values = [hyperexponential_pdf(x, p, lambda_1, lambda_2) for x in x_values]
+    
+    plt.plot(x_values, y_values, color='red', label=f"Аппроксимирующая кривая: {title}")
+    
+    plt.title("Гистограмма распределения и аппроксимирующая кривая")
     plt.xlabel("Значения")
     plt.ylabel("Плотность вероятности")
     plt.legend()
@@ -217,14 +199,14 @@ def task_distribution_law_approximation(data):
 
 
 def main():
-    with open('data.txt', 'r') as f:
+    with open('O:\\Itmo\\5_SEM\\Modeling\\Modeling-lab1\\data.txt', 'r') as f:
         data = list(map(float, f.read().replace(',', '.').split()))
 
     task_characteristics(data, [10, 20, 50, 100, 200, 300])
     task_values_plot(data)
     task_autocorrelation_analysis(data)
     task_frequency_distribution_histogram(data)
-    task_distribution_law_approximation(data)  # не уверен стоит проверить
+    plot_histogram_and_approximation(data) #объединение пред пункта и посл пункта
 
     # data1 = task_law_generate_random(300)
     # task_characteristics(data1, [10, 20, 50, 100, 200, 300])
