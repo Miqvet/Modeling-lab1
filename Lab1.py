@@ -198,6 +198,17 @@ def plot_histogram_and_approximation(data):
     plt.show()
 
 
+# Генератор случайных чисел для гиперэкспоненциального распределения
+def task_law_generate_random(p, lambda_1, lambda_2, size):
+    generated_data = []
+    for _ in range(size):
+        if random.random() < p:
+            generated_data.append(-math.log(1 - random.random()) / lambda_1)
+        else:
+            generated_data.append(-math.log(1 - random.random()) / lambda_2)
+    return generated_data
+
+
 def main():
     with open('O:\\Itmo\\5_SEM\\Modeling\\Modeling-lab1\\data.txt', 'r') as f:
         data = list(map(float, f.read().replace(',', '.').split()))
@@ -208,10 +219,20 @@ def main():
     task_frequency_distribution_histogram(data)
     plot_histogram_and_approximation(data) #объединение пред пункта и посл пункта
 
-    # data1 = task_law_generate_random(300)
-    # task_characteristics(data1, [10, 20, 50, 100, 200, 300])
-    # task_autocorrelation_analysis(data1)
 
+    # Параметры для гиперэкспоненциального распределения
+    p = 0.5
+    lambda_1 = 0.8
+    lambda_2 = 0.4
+    size = 300  # Количество сгенерированных значений
+
+    generated_data = task_law_generate_random(p, lambda_1, lambda_2, size) # Генерация данных
+
+    task_characteristics(generated_data, [10, 20, 50, 100, 200, 300])
+    task_values_plot(generated_data)
+    task_autocorrelation_analysis(generated_data)
+    task_frequency_distribution_histogram(generated_data)
+    plot_histogram_and_approximation(generated_data) #объединение пред пункта и посл пункта
     # task_comparative_analysis(data, data1)
     # task_correlation_dependence(data, data1)
 
